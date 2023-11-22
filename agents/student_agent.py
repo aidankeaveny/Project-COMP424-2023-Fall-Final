@@ -145,7 +145,7 @@ class StudentAgent(Agent):
             return True, p0_score, p1_score
         
 
-        depth = 4
+        depth = 3
         # build the tree (my position, adv postition, board, parent, depth, (is_endgame,protagonist winner))
         # were 1 means protagonist won, 0 means tie, -1 lost
         tree = [(my_pos,adv_pos,chess_board,-1,0,(False,0))]
@@ -199,43 +199,146 @@ class StudentAgent(Agent):
                                         tree.append((info[0][0],move,fake_board,info[1],i+1,(True,0)))
                                 else: #if no winner yet
                                     tree.append((info[0][0],move,fake_board,info[1],i+1,(False,0)))
-        print('here')
+        # make a heuristic tree that has all of the information but if
+        # its endgame or depth of tree (leaf) evaluate heuristic
+        heuristic_tree = []
+        for i in range(len(tree)):
+            info = tree[i]
+            is_leaf = info[5][0]
+            heuristic = 0
+            if is_leaf and info[5][1] == 1: #wins
+                heuristic = 10000
+            elif is_leaf and info[5][1] == -1: #loses
+                heuristic = -10000
+            elif not is_leaf: #makes h number of possible moves from position
+                if info[4] == depth: # max depth means leaf
+                    is_leaf = True 
+                    heuristic = len(get_possible_moves(info[0],info[2],info[1]))
+            heuristic_tree.append((info,(is_leaf,heuristic)))
 
-
-
-
-        # this will store position,heuristic,depth
-        # where the heuristic is number of possible locations to move to
+        # def maxValue(node,alpha1,beta1):
+        #     if node[1][0]:
+        #         return node[1][1], None
+        #     # get successors
+        #     successors = []
+        #     for i in range(1,len(tree)): #0 will give parent -1
+        #         #tree[i][3] gives index of parent of tree[i]
+        #         #this checks if parent of tree[i] is node
+        #         if tree[tree[i][3]][0] == node[0][0] and\
+        #             tree[tree[i][3]][1] == node[0][1] and\
+        #                 tree[tree[i][3]][2].all() == node[0][2].all() and\
+        #                     tree[tree[i][3]][3] == node[0][3]:
+        #             successors.append(heuristic_tree[i])
+        #         # if depth greater than current depth+1 break
+        #         if tree[i][4] > node[0][4]+1:
+        #             break
+        #     best_value = float('-inf')
+        #     best_move = None
+        #     for successor in successors:
+        #         value, _ = minValue(successor,alpha1,beta1)
+        #         if value > best_value:
+        #             best_value = value
+        #             best_move = successor[0]
+        #         alpha1 = max(alpha1,value)
+        #         if alpha1 >= beta1:
+        #             break
+        #     return best_value,best_move
         
-        stack = [(my_pos,len(get_possible_moves(my_pos, chess_board)),0)]
-        # position,wall,parent,heuristic,depth
-        tree = []
-        # for i in range(1,4): # this will append the first 4 branches, move 0 steps and wall
-        #     fake_board = chess_board
-        #     chess_board[my_pos[0],my_pos[1],4-i] = True
-        #     stack.append((my_pos[0],my_pos[1],4-i,len(get_possible_moves(my_pos, fake_board)),0,1))
-        def add_set_of_moves(board):
-            info = stack.pop()
-            possible_moves = get_possible_moves(info[0],board)
-            for move in possible_moves:
-                for i in range(1,4): # this will append the wall branches; go to (move) and wall
-                    fake_board = chess_board
-                    chess_board[move[0],move[1],4-i] = True
-                    tree.append((move,4-i,len(get_possible_moves(move, fake_board)),info[4]+1))
+        # def minValue(node,alpha2,beta2):
+        #     if node[1][0]: #if cuttoff return evaluation
+        #         return node[1][1], None
+        #     # get successors
+        #     successors = []
+        #     for i in range(1,len(tree)): #0 will give parent -1
+        #         #tree[i][3] gives index of parent of tree[i]
+        #         if tree[tree[i][3]][0] == node[0][0] and\
+        #             tree[tree[i][3]][1] == node[0][1] and\
+        #                 tree[tree[i][3]][2].all() == node[0][2].all() and\
+        #                     tree[tree[i][3]][3] == node[0][3]:
+        #             successors.append(heuristic_tree[i])
+        #         # if depth greater than current depth+1 break
+        #         if tree[i][4] > node[0][4]+1:
+        #             break
+        #     best_value = float('inf')
+        #     best_move = None
+        #     for successor in successors:
+        #         value, _ = maxValue(successor,alpha2,beta2)
+        #         if value < best_value:
+        #             best_value = value
+        #             best_move = successor[0]
+        #         beta2 = min(beta2,value)
+        #         if alpha2 >= beta2:
+        #             break
+        #     return best_value, best_move
+
+        # try simple minimax search
+        def maxValue(node):
+            if node[1][0]: #if cuttoff return evaluation
+                return node[1][1], None
+            # get successors
+            successors = []
+            for i in range(1,len(tree)): #0 will give parent -1
+                #tree[i][3] gives index of parent of tree[i]
+                if tree[tree[i][3]][0] == node[0][0] and\
+                    tree[tree[i][3]][1] == node[0][1] and\
+                        tree[tree[i][3]][2].all() == node[0][2].all() and\
+                            tree[tree[i][3]][3] == node[0][3]:
+                    successors.append(heuristic_tree[i])
+                # if depth greater than current depth+1 break
+                if tree[i][4] > node[0][4]+1:
+                    break
+            best_value = float('-inf')
+            best_move = None
+            for successor in successors:
+                value, _ = minValue(successor)
+                if value > best_value:
+                    best_value = value
+                    best_move = successor[0]
+            return best_value, best_move
+        def minValue(node):
+            if node[1][0]: #if cuttoff return evaluation
+                return node[1][1], None
+            # get successors
+            successors = []
+            for i in range(1,len(tree)): #0 will give parent -1
+                #tree[i][3] gives index of parent of tree[i]
+                if tree[tree[i][3]][0] == node[0][0] and\
+                    tree[tree[i][3]][1] == node[0][1] and\
+                        tree[tree[i][3]][2].all() == node[0][2].all() and\
+                            tree[tree[i][3]][3] == node[0][3]:
+                    successors.append(heuristic_tree[i])
+                # if depth greater than current depth+1 break
+                if tree[i][4] > node[0][4]+1:
+                    break
+            best_value = float('inf')
+            best_move = None
+            for successor in successors:
+                value, _ = maxValue(successor)
+                if value < best_value:
+                    best_value = value
+                    best_move = successor[0]
+            return best_value, best_move
 
 
 
-        r, c = best_move
-        my_allowed_dirs = get_allowed_dirs_move(r,c)
 
-        if len(my_allowed_dirs) >= 1:
-            wall = my_allowed_dirs[0]
-        else:
-            wall = 0
+        best_move = minValue(heuristic_tree[0])
+        # my_allowed_dirs = get_allowed_dirs_move(r,c)
+        # print(best_move)
+        move_to = best_move[1][0]
+        fake_board = best_move[1][2]
+        #find where the wall was put
+        real_places = get_allowed_dirs_place(move_to[0],move_to[1],chess_board)
+        fake_places = get_allowed_dirs_place(move_to[0],move_to[1],fake_board)
+        wall = 0
+        for i in range(len(real_places)):
+            if real_places[i] not in fake_places:
+                wall = i
+                break
+
+
             
             
-        time_taken = time.time() - start_time
+        # time_taken = time.time() - start_time
         # print("My AI's turn took ", time_taken, "seconds.")
-
-        # dummy return
-        return best_move, wall
+        return move_to, wall
