@@ -47,55 +47,60 @@ class StudentAgent(Agent):
         r, c = my_pos
         moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
         # Build a list of the moves we can make
-        def get_allowed_dirs(r,c):
-            return [ d                                
-            for d in range(0,4)                           # 4 moves possible
-            if not chess_board[r,c,d] and                 # chess_board True means wall
-            not adv_pos == (r+moves[d][0],c+moves[d][1])] # cannot move through Adversary
-        def get_possible_moves(pos):
-            possible_moves = [pos]
-            my_allowed_dirs = get_allowed_dirs(r,c)
+        def get_allowed_dirs_move(r,c, board, opp_pos):
+            allowed_dirs = [ d                                
+                for d in range(0,4)                           # 4 moves possible
+                if not board[r,c,d] and                 # chess_board True means wall
+                not opp_pos == (r+moves[d][0],c+moves[d][1])] # cannot move through Adversary
+            return allowed_dirs
+        def get_allowed_dirs_place(r,c,board):
+            allowed_dirs = [ d                                
+                for d in range(0,4)
+                if not board[r,c,d]]
+            return allowed_dirs
+        def get_possible_moves(pos, board, adv_pos):
+            allowed_dirs=get_allowed_dirs_place(pos[0],pos[1],board)
+            possible_moves = [(pos,allowed_dirs[0])]
+            r,c = pos
+            my_allowed_dirs = get_allowed_dirs_move(r,c, board, adv_pos)
             queue = [(r,c,my_allowed_dirs,0)]
             while queue:
                 info = queue[0]
-                if info[3] >= max_step:
+                if info[3] > max_step:
                     break
                 queue = queue[1:]
                 for j in range(len(info[2])):
                     m_r, m_c = moves[info[2][j]]
                     new_pos = (info[0] + m_r, info[1] + m_c)
-                    if new_pos not in possible_moves:
-                        new_dirs = get_allowed_dirs(new_pos[0], new_pos[1])
+                    if new_pos not in (tup[0] for tup in possible_moves) and (info[3]+1)<=max_step:
+                        new_dirs = get_allowed_dirs_move(new_pos[0], new_pos[1], board, adv_pos)
                         queue.append((new_pos[0],new_pos[1],new_dirs,info[3]+1))
-                        possible_moves.append(new_pos)
+                        new_dirs_place = get_allowed_dirs_place(new_pos[0],new_pos[1],board)
+                        for dir in new_dirs_place:
+                            possible_moves.append((new_pos,dir))
             return possible_moves
-        possible_moves = get_possible_moves(my_pos)
-        adv_dirs = get_allowed_dirs(adv_pos[0],adv_pos[1])
+        possible_moves = get_possible_moves(my_pos,chess_board,adv_pos)
+        adv_dirs = get_allowed_dirs_move(adv_pos[0],adv_pos[1],chess_board,my_pos)
         if len(adv_dirs) == 1: # if can trap adversary
             m_r, m_c = moves[adv_dirs[0]]
             next_to_adv = (adv_pos[0]+m_r,adv_pos[1]+m_c)
-            wall = 0
-            if next_to_adv in possible_moves:
+            if next_to_adv in (tup[0] for tup in possible_moves):
                 return next_to_adv, (adv_dirs[0]+2)%4
-        best_move = my_pos
-        best_len_dirs = len(get_allowed_dirs(my_pos[0],my_pos[1]))
+            
+        # we want to move to place with most possible moves
+        # start with current location and first available wall
+        my_dirs = get_allowed_dirs_place(my_pos[0],my_pos[1],chess_board)
+        best_move = (my_pos,my_dirs[0])
+        best_len_possible_moves = len(get_possible_moves(my_pos,chess_board,adv_pos))
         for move in possible_moves:
-            allowed_dirs = get_allowed_dirs(move[0],move[1])
-            if len(allowed_dirs) > best_len_dirs:
+            allowed_moves = get_possible_moves(move[0],chess_board,adv_pos)
+            if len(allowed_moves) > best_len_possible_moves:
                 best_move = move
-                best_len_dirs = len(allowed_dirs)
-
-        r, c = best_move
-        my_allowed_dirs = get_allowed_dirs(r,c)
-
-        if len(my_allowed_dirs) >= 1:
-            wall = my_allowed_dirs[0]
-        else:
-            wall = 0
+                best_len_possible_moves = len(allowed_moves)
             
             
         time_taken = time.time() - start_time
         # print("My AI's turn took ", time_taken, "seconds.")
 
         # dummy return
-        return best_move, wall
+        return best_move[0], best_move[1]
