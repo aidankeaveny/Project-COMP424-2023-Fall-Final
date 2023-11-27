@@ -75,7 +75,7 @@ class StudentAgent(Agent):
                 if info[3] > max_step:
                     break
                 for j in range(len(info[2])):
-                    if (time.time() - start_time) > 1.9:
+                    if (time.time() - start_time) > 1.95:
                         return possible_moves
                     m_r, m_c = moves[info[2][j]]
                     new_pos = (info[0] + m_r, info[1] + m_c)
@@ -147,12 +147,12 @@ class StudentAgent(Agent):
                 else:
                     return 0
             my_moves = get_possible_moves(my_pos,board,adv_pos)
-            # adv_moves = get_possible_moves(adv_pos,board,my_pos)
-            return len(my_moves)
+            adv_moves = get_possible_moves(adv_pos,board,my_pos)
+            return len(my_moves)-len(adv_moves)
         
 
         # Whats a good way to determine the depth?
-        depth = 4
+        depth = 5
 
 
         def maxValue(my_pos,adv_pos,board,current_depth,alpha,beta):
@@ -162,7 +162,7 @@ class StudentAgent(Agent):
             best_move = possible_moves[0]
             # move looks like (pos, dir)
             for move in possible_moves:
-                if (time.time() - start_time) > 1.95:
+                if (time.time() - start_time) > 1.99:
                         return best_move,alpha
                 fake_board = board.copy()
                 fake_board = set_barrier(fake_board,move[0][0],move[0][1],move[1])
@@ -182,7 +182,7 @@ class StudentAgent(Agent):
             best_move = possible_moves[0]
             # move looks like (pos, dir)
             for move in possible_moves:
-                if (time.time() - start_time) > 1.95:
+                if (time.time() - start_time) > 1.99:
                         return best_move,beta
                 fake_board = board.copy()
                 fake_board = set_barrier(fake_board,move[0][0],move[0][1],move[1])
