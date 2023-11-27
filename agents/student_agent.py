@@ -39,10 +39,6 @@ class StudentAgent(Agent):
 
         Please check the sample implementation in agents/random_agent.py or agents/human_agent.py for more details.
         """
-        
-        # Some simple code to help you with timing. Consider checking 
-        # time_taken during your search and breaking with the best answer
-        # so far when it nears 2 seconds.
         start_time = time.time()
         r, c = my_pos
         moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
@@ -141,35 +137,30 @@ class StudentAgent(Agent):
             endgame = check_endgame(board,my_pos,adv_pos)
             if endgame[0]:
                 if endgame[1] > endgame[2]:
-                    return float('inf') #try changing these to float('inf') or a smaller big number
+                    return float('inf')
                 elif endgame[1] < endgame[2]:
                     return float('-inf')
                 else:
                     return 0
             my_moves = get_possible_moves(my_pos,board,adv_pos)
-            # adv_moves = get_possible_moves(adv_pos,board,my_pos)
             return len(my_moves)
-        
-
-        # Whats a good way to determine the depth?
-        depth = 2
-        if max_step >= 5:
-            depth = 1
+        time_reached = False
 
 
-        def maxValue(my_pos,adv_pos,board,current_depth,alpha,beta):
-            if current_depth == depth or check_endgame(board,my_pos,adv_pos)[0]:
-                return None, heuristic(my_pos,adv_pos,board)
+        def maxValue(my_pos,adv_pos,board,current_depth,alpha,beta,max_depth):
+            nonlocal time_reached
+            if current_depth == max_depth or check_endgame(board,my_pos,adv_pos)[0]:
+                    return None, heuristic(my_pos,adv_pos,board)
             possible_moves = get_possible_moves(my_pos,board,adv_pos)
             best_move = possible_moves[0]
             # move looks like (pos, dir)
             for move in possible_moves:
                 if (time.time() - start_time) > 1.99:
-                        print('time, max_step:', max_step)
+                        time_reached = True
                         return best_move,alpha
                 fake_board = deepcopy(board)
                 fake_board = set_barrier(fake_board,move[0][0],move[0][1],move[1])
-                adv_turn = minValue(move[0],adv_pos,fake_board,current_depth+1,alpha,beta)
+                adv_turn = minValue(move[0],adv_pos,fake_board,current_depth+1,alpha,beta,max_depth)
                 if adv_turn[1]>alpha:
                     alpha = adv_turn[1]
                     best_move = move
@@ -178,19 +169,20 @@ class StudentAgent(Agent):
             return best_move, alpha
         
 
-        def minValue(my_pos,adv_pos,board,current_depth,alpha,beta):
-            if current_depth == depth or check_endgame(board,my_pos,adv_pos)[0]:
-                return None, heuristic(my_pos,adv_pos,board)
+        def minValue(my_pos,adv_pos,board,current_depth,alpha,beta,max_depth):
+            nonlocal time_reached
+            if current_depth == max_depth or check_endgame(board,my_pos,adv_pos)[0]:
+                    return None, heuristic(my_pos,adv_pos,board)
             possible_moves = get_possible_moves(adv_pos,board,my_pos)
             best_move = possible_moves[0]
             # move looks like (pos, dir)
             for move in possible_moves:
                 if (time.time() - start_time) > 1.99:
-                        print('time, max_step:', max_step)
+                        time_reached = True
                         return best_move,beta
                 fake_board = deepcopy(board)
                 fake_board = set_barrier(fake_board,move[0][0],move[0][1],move[1])
-                adv_turn = maxValue(my_pos,move[0],fake_board,current_depth+1,alpha,beta)
+                adv_turn = maxValue(my_pos,move[0],fake_board,current_depth+1,alpha,beta,max_depth)
                 if adv_turn[1]<beta:
                     beta = adv_turn[1]
                     best_move = move
@@ -198,6 +190,17 @@ class StudentAgent(Agent):
                     return best_move,alpha
             return best_move, beta
         
-        move = maxValue(my_pos,adv_pos,chess_board,0,float('-inf'),float('inf'))
-        return move[0][0], move[0][1]
+        depth = 2
+        if max_step >= 5:
+            depth = 1
+        
+        best_move = maxValue(my_pos,adv_pos,chess_board,0,float('-inf'),float('inf'),depth)
+        i = 0
+        while((time.time() - start_time) < 1.9):
+            depth += i
+            move = maxValue(my_pos,adv_pos,chess_board,0,float('-inf'),float('inf'),depth)
+            if not time_reached:
+                best_move = move
+            
+        return best_move[0][0], best_move[0][1]
 
