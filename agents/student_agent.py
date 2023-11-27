@@ -85,7 +85,7 @@ class StudentAgent(Agent):
                         new_dirs_place = get_allowed_dirs_place(new_pos[0],new_pos[1],board)
                         for dir in new_dirs_place:
                             possible_moves.append((new_pos,dir))
-                return possible_moves            
+            return possible_moves            
 
         def set_barrier(board, r, c, dir):
             # Set the barrier to True
@@ -147,12 +147,14 @@ class StudentAgent(Agent):
                 else:
                     return 0
             my_moves = get_possible_moves(my_pos,board,adv_pos)
-            adv_moves = get_possible_moves(adv_pos,board,my_pos)
-            return len(my_moves)-len(adv_moves)
+            # adv_moves = get_possible_moves(adv_pos,board,my_pos)
+            return len(my_moves)
         
 
         # Whats a good way to determine the depth?
-        depth = 5
+        depth = 2
+        if max_step >= 5:
+            depth = 1
 
 
         def maxValue(my_pos,adv_pos,board,current_depth,alpha,beta):
@@ -163,8 +165,9 @@ class StudentAgent(Agent):
             # move looks like (pos, dir)
             for move in possible_moves:
                 if (time.time() - start_time) > 1.99:
+                        print('time, max_step:', max_step)
                         return best_move,alpha
-                fake_board = board.copy()
+                fake_board = deepcopy(board)
                 fake_board = set_barrier(fake_board,move[0][0],move[0][1],move[1])
                 adv_turn = minValue(move[0],adv_pos,fake_board,current_depth+1,alpha,beta)
                 if adv_turn[1]>alpha:
@@ -183,8 +186,9 @@ class StudentAgent(Agent):
             # move looks like (pos, dir)
             for move in possible_moves:
                 if (time.time() - start_time) > 1.99:
+                        print('time, max_step:', max_step)
                         return best_move,beta
-                fake_board = board.copy()
+                fake_board = deepcopy(board)
                 fake_board = set_barrier(fake_board,move[0][0],move[0][1],move[1])
                 adv_turn = maxValue(my_pos,move[0],fake_board,current_depth+1,alpha,beta)
                 if adv_turn[1]<beta:
