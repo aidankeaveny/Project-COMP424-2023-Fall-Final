@@ -195,13 +195,5 @@ class StudentAgent(Agent):
             depth = 1
         board = deepcopy(chess_board)
         best_move = maxValue(my_pos,adv_pos,board,0,float('-inf'),float('inf'),depth)
-        add = 1
-        while((time.time() - start_time) < 1.9):
-            board1 = deepcopy(chess_board)
-            new_move = maxValue(my_pos,adv_pos,board1,0,float('-inf'),float('inf'),depth+add)
-            add += 1
-            if (time.time() - start_time) < 1.99:
-                best_move = new_move
-            
         return best_move[0][0], best_move[0][1]
 
