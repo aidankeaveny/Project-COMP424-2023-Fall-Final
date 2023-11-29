@@ -137,9 +137,9 @@ class StudentAgent(Agent):
             endgame = check_endgame(board,my_pos,adv_pos)
             if endgame[0]:
                 if endgame[1] > endgame[2]:
-                    return float('inf')
+                    return 10000
                 elif endgame[1] < endgame[2]:
-                    return float('-inf')
+                    return -10000
                 else:
                     return 0
             my_moves = get_possible_moves(my_pos,board,adv_pos)
@@ -195,5 +195,13 @@ class StudentAgent(Agent):
             depth = 1
         board = deepcopy(chess_board)
         best_move = maxValue(my_pos,adv_pos,board,0,float('-inf'),float('inf'),depth)
+        if (time.time() - start_time) < 1.9:
+            new_move = maxValue(my_pos,adv_pos,board,0,float('-inf'),float('inf'),depth+1)
+            if not time_reached:
+                best_move = new_move
+        if (time.time() - start_time) < 1.85:
+            new_move = maxValue(my_pos,adv_pos,board,0,float('-inf'),float('inf'),depth+2)
+            if not time_reached:
+                best_move = new_move
         return best_move[0][0], best_move[0][1]
 
